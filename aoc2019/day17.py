@@ -152,12 +152,7 @@ def solve2(strings):
         s2 = shortest[: length + 1]
         if len(condense(s2)) > 20:
             break
-        split_by_s2 = [
-            s
-            for string in strings
-            for s in string.split(s2)
-            if s
-        ]
+        split_by_s2 = [s for string in strings for s in string.split(s2) if s]
         if s1 := solve1(split_by_s2):
             return s1, s2
     return None, None

@@ -50,7 +50,9 @@ def get_tiles(map_str):
 
 def vertical_portals(map_str):
     # see "horizontal_portals()"
-    map_str_transposed = "\n".join("".join(col) for col in zip(*map_str.splitlines()))
+    map_str_transposed = "\n".join(
+        "".join(col) for col in zip(*map_str.splitlines())
+    )
     for name, pos in horizontal_portals(map_str_transposed):
         yield name, Vec(pos.y, pos.x)
 
