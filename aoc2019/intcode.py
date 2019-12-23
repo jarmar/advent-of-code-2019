@@ -1,4 +1,5 @@
 from collections import defaultdict, namedtuple, deque
+from functools import lru_cache
 from itertools import product, repeat, permutations, chain, tee
 import sys
 import operator
@@ -36,15 +37,19 @@ class Computer(object):
         self.inp = inp if inp is not None else iter(())
         self.name = name if name is not None else ""  # for debugging
 
-    def run(self):
-        """Run the program, yielding the results of output instructions."""
+    def run(self, slowly=False):
+        """Run the program, yielding the results of output instructions.
+
+        If slowly=True, results from all instructions (i.e. mostly Nones) will
+        be yielded, allowing for lockstep computation.
+        """
         while True:
             fullop = self.get()
             op, modes = parse_fullop(fullop)
             opers = [Operand(self.get(), mode) for mode in modes]
             try:
                 result = self.exec_op(op, opers)
-                if result is not None:
+                if slowly or result is not None:
                     yield result
             except StOp99:
                 break
@@ -149,6 +154,7 @@ def op_arglen(op):
         return 0
 
 
+@lru_cache
 def parse_fullop(fullop):
     op = fullop % 100
     fullop //= 100
