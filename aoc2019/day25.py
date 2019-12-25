@@ -17,29 +17,37 @@ REVERSE = {
 
 
 class Crawler:
-    def __init__(self, opcodes):
+    def __init__(self, opcodes, bad_items):
         self.com = Computer(opcodes, inp=self.get_input())
         self.run = self.com.run()
         self.buffer = ""
         self.quiet = False
+        self.explorer = Explorer(self, bad_items)
 
     def play(self):
         # until we reach the goal, this function just keeps the computer
         # running, the actual logic happens in get_input().
-        for i in self.com.run():
-            if not self.quiet:
-                print(chr(i), end="")
-            self.buffer += chr(i)
-        # output is done, no more input requested == success
-        print(self.buffer)
-        match = re.search(r"typing (\d+) on the keypad", self.buffer)
-        return match[1]
+        try:
+            for i in self.com.run():
+                if not self.quiet:
+                    print(chr(i), end="")
+                self.buffer += chr(i)
+        except ValueError as e:
+            # something bad happened, it's probably due to the last item
+            raise ValueError(self.explorer.items[-1]) from e
+        # output is done, no more input requested == success?
+        if match := re.search(r"typing (\d+) on the keypad", self.buffer):
+            print(self.buffer, end="")
+            return match[1]
+        else:
+            # nope, picked up some junk
+            raise ValueError(self.explorer.items[-1])
 
     def get_input(self):
         # this function (and the functions it calls) use "yield from" to
         # run asynchronously when input is requested by the intcode computer.
         print("BOT: exploring...")
-        items, cmd_to_test = yield from Explorer(self).explore_ship()
+        items, cmd_to_test = yield from self.explorer.explore_ship()
         print("BOT: ready to test using items:")
         print(*(f"    {item}" for item in items), sep="\n")
         print("BOT: trying different combinations", end="", flush=True)
@@ -100,8 +108,10 @@ class BruteForcer:
 
 
 class Explorer:
-    def __init__(self, crawler):
+    def __init__(self, crawler, bad_items):
         self.crawler = crawler
+        # items that should not be picked up
+        self.bad_items = bad_items
         # items picked up
         self.items = []
         # cardinal direction => room name
@@ -137,7 +147,7 @@ class Explorer:
                 self.graph[self.pos][door] = self.generate_placeholder()
 
         for item in items:
-            if item in BAD_THINGS_DO_NOT_PICK_UP:
+            if item in self.bad_items:
                 continue
             self.items.append(item)
             yield from self.crawler.emit(f"take {item}")
@@ -209,6 +219,7 @@ def parse_room(room_str):
     room_str = room_str.strip()
     in_doors = False
     in_items = False
+    name = None
     doors = []
     items = []
     for line in room_str.splitlines():
@@ -236,21 +247,20 @@ def parse_room(room_str):
                 doors.append(m[1])
             elif in_items:
                 items.append(m[1])
+    if name is None:
+        raise ValueError("could not parse room")
     return name, doors, items
 
 
 def part1(opcodes):
-    crawler = Crawler(opcodes)
-    return crawler.play()
-
-
-BAD_THINGS_DO_NOT_PICK_UP = [
-    "infinite loop",
-    "escape pod",
-    "molten lava",
-    "giant electromagnet",
-    "photons",
-]
+    bad_items = ["infinite loop"]
+    while True:
+        try:
+            return Crawler(opcodes, bad_items).play()
+        except ValueError as bad_item_err:
+            print(f"BOT: failed after taking {bad_item_err}.")
+            print(f"BOT: forbidding {bad_item_err} and restarting...")
+            bad_items.append(str(bad_item_err))
 
 
 if __name__ == "__main__":
