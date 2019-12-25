@@ -8,16 +8,16 @@ import sys
 def count_neighbours(grid, x, y):
     s = 0
     if x > 0:
-        if grid[y][x-1] == "#":
+        if grid[y][x - 1] == "#":
             s += 1
     if y > 0:
-        if grid[y-1][x] == "#":
+        if grid[y - 1][x] == "#":
             s += 1
     if x < len(grid[0]) - 1:
-        if grid[y][x+1] == "#":
+        if grid[y][x + 1] == "#":
             s += 1
     if y < len(grid) - 1:
-        if grid[y+1][x] == "#":
+        if grid[y + 1][x] == "#":
             s += 1
     return s
 
@@ -36,7 +36,10 @@ def step_coord(grid, x, y):
 
 
 def step_grid(grid):
-    return tuple(tuple(step_coord(grid, x, y) for x, _ in enumerate(line)) for y, line in enumerate(grid))
+    return tuple(
+        tuple(step_coord(grid, x, y) for x, _ in enumerate(line))
+        for y, line in enumerate(grid)
+    )
 
 
 def biodiversity(grid):
@@ -138,7 +141,10 @@ def step_coord_p2(grids, x, y, z):
 
 
 def step_grid_p2(grids, z):
-    return tuple(tuple(step_coord_p2(grids, x, y, z) for x, _ in enumerate(line)) for y, line in enumerate(grids[z]))
+    return tuple(
+        tuple(step_coord_p2(grids, x, y, z) for x, _ in enumerate(line))
+        for y, line in enumerate(grids[z])
+    )
 
 
 def empty_grid():
@@ -160,12 +166,15 @@ def iterate(grids):
 
 
 def count_bugs(grids):
-    return len([ch
-        for grid in grids.values()
-        for line in grid
-        for ch in line
-        if ch == "#"
-    ])
+    return len(
+        [
+            ch
+            for grid in grids.values()
+            for line in grid
+            for ch in line
+            if ch == "#"
+        ]
+    )
 
 
 def part2(map_str, steps=200):
